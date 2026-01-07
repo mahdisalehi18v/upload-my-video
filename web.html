@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="fa" dir="rtl" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>معرفی شخصی</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+      font-family: 'Vazirmatn', sans-serif;
+    }
+    
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+    }
+    
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    
+    .video-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .video-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div id="app" class="w-full h-full overflow-auto" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><!-- Header -->
+   <header class="text-center py-16 px-4">
+    <h1 id="siteTitle" class="text-white mb-4" style="font-size: 3.5rem; font-weight: 700;">نام شما</h1>
+    <p id="tagline" class="text-white" style="font-size: 1.5rem; font-weight: 400; opacity: 0.95;">توضیح کوتاه درباره خودتان</p>
+   </header><!-- About Section -->
+   <section style="background-color: #ffffff; margin: 2rem auto; max-width: 1200px; border-radius: 1rem; padding: 3rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
+    <h2 id="aboutTitle" class="mb-6" style="font-size: 2rem; font-weight: 700; color: #667eea;">درباره من</h2>
+    <p id="aboutText" style="font-size: 1.125rem; line-height: 2; color: #4a5568;">من یک فرد خلاق و پرانرژی هستم که علاقه‌مند به اشتراک‌گذاری دانش و تجربیات خود با دیگران است. در اینجا می‌توانید ویدیوهای من را مشاهده کنید و با من آشنا شوید.</p>
+   </section><!-- Videos Section -->
+   <section style="max-width: 1200px; margin: 0 auto; padding: 3rem 1rem;">
+    <h2 id="videosTitle" class="text-center mb-12 text-white" style="font-size: 2.5rem; font-weight: 700;">ویدیوهای من</h2>
+    <div id="videoGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8"><!-- Video cards will be dynamically added here -->
+    </div><!-- Add Video Form -->
+    <div style="background-color: #ffffff; border-radius: 1rem; padding: 2rem; margin-top: 3rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
+     <h3 class="mb-6" style="font-size: 1.5rem; font-weight: 700; color: #667eea;">افزودن ویدیوی جدید</h3>
+     <form id="addVideoForm">
+      <div class="mb-4"><label for="videoTitle" class="block mb-2" style="font-size: 1rem; font-weight: 600; color: #4a5568;">عنوان ویدیو</label> <input type="text" id="videoTitle" required style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.3s;">
+      </div>
+      <div class="mb-4"><label for="videoLink" class="block mb-2" style="font-size: 1rem; font-weight: 600; color: #4a5568;">لینک ویدیو (اپارات یا یوتیوب)</label> <input type="url" id="videoLink" required placeholder="https://www.aparat.com/v/..." style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.3s;">
+       <p class="mt-2" style="font-size: 0.875rem; color: #718096;">لینک کامل ویدیو از اپارات یا یوتیوب را وارد کنید</p>
+      </div><button type="submit" id="addButton" style="background-color: #667eea; color: white; padding: 0.75rem 2rem; border-radius: 0.5rem; font-size: 1rem; font-weight: 600; border: none; cursor: pointer; transition: background-color 0.3s;"> افزودن ویدیو </button>
+     </form>
+    </div>
+   </section>
+  </div>
+  <script>
+    const defaultConfig = {
+      site_title: "نام شما",
+      tagline: "توضیح کوتاه درباره خودتان",
+      about_title: "درباره من",
+      about_text: "من یک فرد خلاق و پرانرژی هستم که علاقه‌مند به اشتراک‌گذاری دانش و تجربیات خود با دیگران است. در اینجا می‌توانید ویدیوهای من را مشاهده کنید و با من آشنا شوید.",
+      videos_title: "ویدیوهای من",
+      primary_color: "#667eea",
+      secondary_color: "#764ba2",
+      surface_color: "#ffffff",
+      text_color: "#4a5568",
+      button_color: "#667eea",
+      font_family: "Vazirmatn",
+      font_size: 16
+    };
+
+    let videos = [];
+
+    function extractVideoId(url) {
+      // Aparat
+      if (url.includes('aparat.com')) {
+        const match = url.match(/aparat\.com\/v\/([^/?]+)/);
+        return match ? { type: 'aparat', id: match[1] } : null;
+      }
+      
+      // YouTube
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        let id = null;
+        if (url.includes('youtu.be/')) {
+          id = url.split('youtu.be/')[1].split('?')[0];
+        } else if (url.includes('youtube.com/watch')) {
+          const urlParams = new URLSearchParams(new URL(url).search);
+          id = urlParams.get('v');
+        } else if (url.includes('youtube.com/embed/')) {
+          id = url.split('youtube.com/embed/')[1].split('?')[0];
+        }
+        return id ? { type: 'youtube', id: id } : null;
+      }
+      
+      return null;
+    }
+
+    function getEmbedUrl(videoInfo) {
+      if (videoInfo.type === 'aparat') {
+        return `https://www.aparat.com/video/video/embed/videohash/${videoInfo.id}/vt/frame`;
+      } else if (videoInfo.type === 'youtube') {
+        return `https://www.youtube.com/embed/${videoInfo.id}`;
+      }
+      return null;
+    }
+
+    function renderVideos() {
+      const videoGrid = document.getElementById('videoGrid');
+      const config = window.elementSdk?.config || defaultConfig;
+      
+      if (videos.length === 0) {
+        videoGrid.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <p class="text-white" style="font-size: 1.25rem; opacity: 0.9;">هنوز ویدیویی اضافه نشده است. اولین ویدیوی خود را اضافه کنید!</p>
+          </div>
+        `;
+        return;
+      }
+
+      videoGrid.innerHTML = videos.map((video, index) => `
+        <div class="video-card" style="background-color: ${config.surface_color}; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+          <h3 class="mb-4" style="font-size: 1.25rem; font-weight: 700; color: ${config.primary_color};">${video.title}</h3>
+          <div class="video-container mb-4">
+            <iframe src="${video.embedUrl}" allowfullscreen></iframe>
+          </div>
+          <button onclick="deleteVideo(${index})" style="background-color: #e53e3e; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: background-color 0.3s; width: 100%;">
+            حذف ویدیو
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function deleteVideo(index) {
+      videos.splice(index, 1);
+      renderVideos();
+    }
+
+    document.getElementById('addVideoForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const title = document.getElementById('videoTitle').value.trim();
+      const link = document.getElementById('videoLink').value.trim();
+      
+      if (!title || !link) {
+        return;
+      }
+      
+      const videoInfo = extractVideoId(link);
+      
+      if (!videoInfo) {
+        document.getElementById('videoLink').style.borderColor = '#e53e3e';
+        setTimeout(() => {
+          document.getElementById('videoLink').style.borderColor = '#e2e8f0';
+        }, 2000);
+        return;
+      }
+      
+      const embedUrl = getEmbedUrl(videoInfo);
+      
+      if (!embedUrl) {
+        document.getElementById('videoLink').style.borderColor = '#e53e3e';
+        setTimeout(() => {
+          document.getElementById('videoLink').style.borderColor = '#e2e8f0';
+        }, 2000);
+        return;
+      }
+      
+      videos.push({
+        title: title,
+        link: link,
+        embedUrl: embedUrl,
+        type: videoInfo.type
+      });
+      
+      document.getElementById('videoTitle').value = '';
+      document.getElementById('videoLink').value = '';
+      
+      renderVideos();
+    });
+
+    async function onConfigChange(config) {
+      const baseFontSize = config.font_size || defaultConfig.font_size;
+      const fontFamily = config.font_family || defaultConfig.font_family;
+      const fontStack = `${fontFamily}, sans-serif`;
+
+      document.getElementById('siteTitle').textContent = config.site_title || defaultConfig.site_title;
+      document.getElementById('siteTitle').style.fontFamily = fontStack;
+      document.getElementById('siteTitle').style.fontSize = `${baseFontSize * 2.2}px`;
+
+      document.getElementById('tagline').textContent = config.tagline || defaultConfig.tagline;
+      document.getElementById('tagline').style.fontFamily = fontStack;
+      document.getElementById('tagline').style.fontSize = `${baseFontSize * 1.5}px`;
+
+      document.getElementById('aboutTitle').textContent = config.about_title || defaultConfig.about_title;
+      document.getElementById('aboutTitle').style.fontFamily = fontStack;
+      document.getElementById('aboutTitle').style.fontSize = `${baseFontSize * 2}px`;
+      document.getElementById('aboutTitle').style.color = config.primary_color || defaultConfig.primary_color;
+
+      document.getElementById('aboutText').textContent = config.about_text || defaultConfig.about_text;
+      document.getElementById('aboutText').style.fontFamily = fontStack;
+      document.getElementById('aboutText').style.fontSize = `${baseFontSize * 1.125}px`;
+      document.getElementById('aboutText').style.color = config.text_color || defaultConfig.text_color;
+
+      document.getElementById('videosTitle').textContent = config.videos_title || defaultConfig.videos_title;
+      document.getElementById('videosTitle').style.fontFamily = fontStack;
+      document.getElementById('videosTitle').style.fontSize = `${baseFontSize * 2.5}px`;
+
+      const gradient = `linear-gradient(135deg, ${config.primary_color || defaultConfig.primary_color} 0%, ${config.secondary_color || defaultConfig.secondary_color} 100%)`;
+      document.getElementById('app').style.background = gradient;
+
+      document.getElementById('addButton').style.backgroundColor = config.button_color || defaultConfig.button_color;
+      document.getElementById('addButton').style.fontFamily = fontStack;
+      document.getElementById('addButton').style.fontSize = `${baseFontSize}px`;
+
+      renderVideos();
+    }
+
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.primary_color || defaultConfig.primary_color,
+            set: (value) => {
+              config.primary_color = value;
+              window.elementSdk.setConfig({ primary_color: value });
+            }
+          },
+          {
+            get: () => config.secondary_color || defaultConfig.secondary_color,
+            set: (value) => {
+              config.secondary_color = value;
+              window.elementSdk.setConfig({ secondary_color: value });
+            }
+          },
+          {
+            get: () => config.surface_color || defaultConfig.surface_color,
+            set: (value) => {
+              config.surface_color = value;
+              window.elementSdk.setConfig({ surface_color: value });
+            }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => {
+              config.text_color = value;
+              window.elementSdk.setConfig({ text_color: value });
+            }
+          },
+          {
+            get: () => config.button_color || defaultConfig.button_color,
+            set: (value) => {
+              config.button_color = value;
+              window.elementSdk.setConfig({ button_color: value });
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => config.font_family || defaultConfig.font_family,
+          set: (value) => {
+            config.font_family = value;
+            window.elementSdk.setConfig({ font_family: value });
+          }
+        },
+        fontSizeable: {
+          get: () => config.font_size || defaultConfig.font_size,
+          set: (value) => {
+            config.font_size = value;
+            window.elementSdk.setConfig({ font_size: value });
+          }
+        }
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ["site_title", config.site_title || defaultConfig.site_title],
+        ["tagline", config.tagline || defaultConfig.tagline],
+        ["about_title", config.about_title || defaultConfig.about_title],
+        ["about_text", config.about_text || defaultConfig.about_text],
+        ["videos_title", config.videos_title || defaultConfig.videos_title]
+      ]);
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+
+    renderVideos();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ba1b96d0475527d',t:'MTc2Nzc3MDc1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
